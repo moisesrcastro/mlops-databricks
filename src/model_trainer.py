@@ -16,7 +16,8 @@ from sklearn.metrics import (
 import pandas as pd
 from loguru import logger
 import numpy as np
-
+from .config import ProjectConfig
+from .utils import setup_mlflow, log_model_metrics
 
 class ModelTrainer:
     """
