@@ -1,0 +1,14 @@
+project_config:
+  catalog: catalog
+  schema: schema
+
+data_processor:
+  sql_query: |
+    SELECT *
+    FROM hive_metastore.refined_finance_bv.tabela_modelada
+  value_columns: ['value_1', 'value_2']
+
+feature_store:
+  table_name: fs_producao_semana
+  primary_keys:
+    - semana
