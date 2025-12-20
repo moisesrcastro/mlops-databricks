@@ -12,3 +12,18 @@ feature_store:
   table_name: fs_producao_semana
   primary_keys:
     - semana
+
+model_training:
+  experiment_name: experiment_01
+  registered_model_prefix: registered_model_prexix_01
+  params: params_01
+
+model_validation:
+    model_name: modelo_name
+    registry_name: registry_name
+    regression:
+      -r2: 0.65   
+      -mape: 0.15  
+
+model_registry:
+  model_name: model_name

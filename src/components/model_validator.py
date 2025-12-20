@@ -10,6 +10,7 @@ from sklearn.metrics import (
 import pandas as pd
 import numpy as np
 from loguru import logger
+from entity.config_entity import ModelValidatorConfig
 
 try:
     import mlflow
@@ -21,7 +22,7 @@ LOWER_BETTER = {"mae", "mape", "rmse"}
 
 
 class ModelValidator:
-    def __init__(self, config, model_type: str = "regression"):
+    def __init__(self, config: ModelValidatorConfig, model_type: str = "regression"):
         self.config = config
         self.model_type = model_type
         self.thresholds = (

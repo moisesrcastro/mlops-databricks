@@ -13,3 +13,19 @@ class DataProcessorConfig:
 class FeatureStoreConfig:
     table_name: str
     primary_keys: list[str]
+
+@dataclass
+class ModelTrainerConfig:
+    experiment_name: str
+    registered_model_prefix: str
+    params: dict
+
+@dataclass
+class ModelValidatorConfig:
+    model_name: str
+    registry_name: str
+    regression: dict  
+
+@dataclass
+class ModelRegistryConfig:
+    model_name: str

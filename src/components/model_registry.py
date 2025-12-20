@@ -3,13 +3,14 @@ import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.exceptions import MlflowException
 from loguru import logger
+from entity.config_entity import ModelRegistryConfig
 
 class ModelRegistry:
 
-    def __init__(self, config):
+    def __init__(self, config: ModelRegistryConfig):
         self.config = config
         self.client = MlflowClient()
-        self.model_name = self.config.get("model_name")
+        self.model_name = self.config.model_name
 
         logger.info(f"[ModelRegistry] Inicializado com model_name='{self.model_name}'")
 

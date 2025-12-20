@@ -1,129 +1,116 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Tuple
 import mlflow
 import mlflow.sklearn
-from mlflow.tracking import MlflowClient
-from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    roc_auc_score,
-    mean_squared_error,
-    mean_absolute_error,
-    r2_score,
-)
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import pandas as pd
 from loguru import logger
 import numpy as np
-from .config import ProjectConfig
-from .utils import setup_mlflow, log_model_metrics
+import plotly.graph_objects as go
+import plotly.io as pio
+import os
+from entity.config_entity import ModelTrainerConfig
+
+
 
 class ModelTrainer:
-    """
-    Classe responsável por treinar modelos e registrar tudo no MLflow.
-    """
 
-    def __init__(self, config: ProjectConfig, model_type: str = "regression"):
-        #Inicializa o ModelTrainer.
+    def __init__(self, config: ModelTrainerConfig):
         self.config = config
-        self.model_type = model_type
-        self.model = None #permite carregar o modelo direto do MLFlow
-        
-        #Direcionar para o experimento correto:
-        setup_mlflow(config, config.experiment_name_basic)
-
-
-
-    def train(self,X_train: pd.DataFrame,y_train: pd.Series,X_val: Optional[pd.DataFrame] = None,y_val: Optional[pd.Series] = None):
-        """
-        Treina o modelo e registra tudo no MLflow.
-        """
-        logger.info(f'Starting training for {self.model_type} model')
-
-        with mlflow.start_run():
-            
-            #Registra as informações dentro do experimento
-            mlflow.log_param("model_type", self.model_type)
-            mlflow.log_params(self.config.parameters)
-            mlflow.log_param("num_variables", len(self.config.num_features))
-            mlflow.log_param("cat_variables", len(self.config.cat_features))
-        
-            if self.model_type == "classification":
-                self.model = GradientBoostingClassifier(
-                                                        learning_rate = self.config.parameters.get('learning_rate'),
-                                                        random_state = 42
-                                                        )
-            else:
-                self.model = GradientBoostingRegressor(
-                                                        learning_rate = self.config.parameters.get('learning_rate'),
-                                                        random_state = 42
-                                                        )
-            #4. Treinar o modelo
-            logger.info('Training model...')
-            self.model.fit(X_train, y_train)
-
-            train_pred = self.model.predict(X_train)
-            train_metrics = self._calculate_metrics(y_train, train_pred)
-
-            logger.info('Training metrics...')
-
-            for metric_name, metric_value in train_metrics.items():
-                logger.info(f'{metric_name}: {metric_value}')
-                mlflow.log_metric(metric_name, metric_value)
-
-            #Registra no experimento as metricas de treinamento
-            log_model_metrics_experiment({f'train_{metric_name}': metric_value for metric_name, metric_value in train_metrics.items()})
-
-            if X_val is not None and y_val is not None:
-                val_pred = self.model.predict(X_val)
-                val_metrics = self._calculate_metrics(y_val, val_pred)
-
-                logger.info('Validation metrics...')
-                for metric_name, metric_value in val_metrics.items():
-                    logger.info(f'{metric_name}: {metric_value}')
-                
-                #Registra no experimento as metricas de treinamento
-                log_model_metrics_experiment({f'val_{metric_name}': metric_value for metric_name, metric_value in val_metrics.items()})
-            
-            #8. Registrar o modelo no MLflow Model Registry
-            mlflow.sklearn.log_model(
-                                        self.model,
-                                        "model",
-                                        registered_model_name=self.config.model.get("name", "mlops-model"),
-                                    )
-
-            logger.info("Model training complete")
-        
-        return self.model
-        
-
-
-    def _calculate_metrics(self, y_true: pd.Series, y_pred: pd.Series):
-        """
-        Calcula métricas conforme o tipo de modelo.
-        """
-        metrics = {}
-        
-        if self.model_type == "classification":
-            metrics["accuracy"] = accuracy_score(y_true, y_pred)
-            metrics["precision"] = precision_score(y_true, y_pred, average="weighted", zero_division=0)
-            metrics["recall"] = recall_score(y_true, y_pred, average="weighted", zero_division=0)
-            metrics["f1"] = f1_score(y_true, y_pred, average="weighted", zero_division=0)
-            
+        mlflow.set_tracking_uri("databricks")
+        # Databricks converte None em "None" (string)
+        if self.config.registered_model_prefix is None or str(self.config.registered_model_prefix).lower() == "none":
+            self.registered_model_prefix = None
         else:
-            metrics["mse"] = mean_squared_error(y_true, y_pred)
-            metrics["mae"] = mean_absolute_error(y_true, y_pred)
-            metrics["rmse"] = np.sqrt(metrics["mse"])
-            metrics["r2"] = r2_score(y_true, y_pred)
-        
-        return metrics
+            self.registered_model_prefix = str(self.config.registered_model_prefix)
+
+        # Garantir que experiment_name nunca vem "None"
+        if self.config.experiment_name is None or str(self.config.experiment_name).lower() == "none":
+            raise ValueError("experiment_name não pode ser None ou 'None'")
+
+        self.experiment_name = self.config.experiment_name
+        self.params = self.config.params or {}
+
+        mlflow.set_experiment(self.experiment_name)
 
 
-    def predict(self, X: pd.DataFrame) -> pd.Series:
-        """
-        Faz predições simples com o modelo treinado.
-        """
-        if self.model is None:
-            raise ValueError("Model not trained yet. Call train() first.")
-        return pd.Series(self.model.predict(X))
+    def _calculate_metrics(self, y_true, y_pred):
+        return {
+            "mse": mean_squared_error(y_true, y_pred),
+            "mae": mean_absolute_error(y_true, y_pred),
+            "rmse": np.sqrt(mean_squared_error(y_true, y_pred)),
+            "r2": r2_score(y_true, y_pred)
+        }
+
+    def train_single(
+        self,
+        model,
+        model_name: str,
+        X_train, y_train,
+        X_val=None, y_val=None,
+        df_plot=None, target=None, split_idx=None
+    ):
+
+        logger.info(f"Treinando modelo: {model_name}")
+
+        with mlflow.start_run(run_name=model_name):
+
+            mlflow.log_param("selected_model", model_name)
+            mlflow.log_params(self.params)
+
+            model.fit(X_train, y_train)
+
+            train_pred = model.predict(X_train)
+            train_metrics = self._calculate_metrics(y_train, train_pred)
+            mlflow.log_metrics({f"train_{k}": v for k, v in train_metrics.items()})
+
+            if X_val is not None:
+                val_pred = model.predict(X_val)
+                val_metrics = self._calculate_metrics(y_val, val_pred)
+                mlflow.log_metrics({f"val_{k}": v for k, v in val_metrics.items()})
+
+            # Registro seguro (não registra se prefixo não fornecido)
+            if self.registered_model_prefix:
+                mlflow.sklearn.log_model(
+                    model,
+                    artifact_path=f"model_{model_name}",
+                    registered_model_name=f"{self.registered_model_prefix}_{model_name}"
+                )
+            else:
+                mlflow.sklearn.log_model(
+                    model,
+                    artifact_path=f"model_{model_name}"
+                )
+
+        return model
+
+    def train_multiple_models(
+        self,
+        models_list: List[Tuple[str, Any]],
+        X_train, y_train,
+        X_val=None, y_val=None,
+        df_plot=None, target=None, split_idx=None
+    ):
+
+        resultados = []
+
+        for model_name, model_obj in models_list:
+            print("-" * 50)
+            try:
+                trained = self.train_single(
+                    model=model_obj,
+                    model_name=model_name,
+                    X_train=X_train,
+                    y_train=y_train,
+                    X_val=X_val,
+                    y_val=y_val,
+                    df_plot=df_plot,
+                    target=target,
+                    split_idx=split_idx
+                )
+                resultados.append((model_name, trained))
+
+            except Exception as e:
+                logger.error(f"Erro ao treinar {model_name}: {e}")
+
+        return resultados
+

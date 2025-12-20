@@ -1,7 +1,11 @@
+from components import model_trainer
 from utils import read_yaml
 from entity.config_entity import (
                                 DataProcessorConfig, 
                                 FeatureStoreConfig,
+                                ModelTrainerConfig,
+                                ModelValidatorConfig,
+                                ModelRegistryConfig,
                                 ProjectConfig)
 
 class ConfigurationManager:
@@ -43,3 +47,31 @@ class ConfigurationManager:
             primary_keys = config.primary_keys
         )
         return feature_store_config
+
+    def get_model_trainer(self) -> ModelTrainerConfig:
+        config = self.config.model_training
+
+        model_trainer_config = ModelTrainerConfig(
+                                    experiment_name = config.experiment_name,
+                                    registered_model_prefix = config.registered_model_prefix,
+                                    params = config.params)
+        return model_trainer_config
+
+    def get_model_validator(self) -> ModelValidatorConfig:
+        config = self.config.model_validation
+
+        model_validation_config = ModelValidatorConfig(
+                                    model_name = config.model_name,
+                                    registry_name = config.registry_name,
+                                    regression = config.repression)
+ 
+        return model_validation_config
+
+    def get_model_registry(self) -> ModelRegistryConfig:
+        config = self.config.model_registry
+
+        model_registry_config = ModelRegistryConfig(
+                                    model_name = config.model_name
+                                    )
+ 
+        return model_registry_config
