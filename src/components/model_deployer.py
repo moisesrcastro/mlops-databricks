@@ -1,4 +1,3 @@
-from tokenize import OP
 from databricks.sdk import WorkspaceClient
 from utils.config_entity import ModelDeployerConfig
 from typing import Optional, List, Dict, Any
