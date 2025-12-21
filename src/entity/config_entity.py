@@ -29,3 +29,8 @@ class ModelValidatorConfig:
 @dataclass
 class ModelRegistryConfig:
     model_name: str
+
+@dataclass
+class ModelDeployerConfig:
+    model_name: str
+    endpoint_name:str

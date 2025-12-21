@@ -1,4 +1,3 @@
-from components import model_trainer
 from utils import read_yaml
 from entity.config_entity import (
                                 DataProcessorConfig, 
@@ -6,6 +5,7 @@ from entity.config_entity import (
                                 ModelTrainerConfig,
                                 ModelValidatorConfig,
                                 ModelRegistryConfig,
+                                ModelDeployerConfig,
                                 ProjectConfig)
 
 class ConfigurationManager:
@@ -75,3 +75,13 @@ class ConfigurationManager:
                                     )
  
         return model_registry_config
+
+    def get_model_deployer(self) -> ModelDeployerConfig:
+        config = self.config.model_deployer
+
+        model_deployer_config = ModelDeployerConfig(
+                                    model_name = config.model_name,
+                                    endpoint_name=config.endpoint_name
+                                    )
+ 
+        return model_deployer_config
