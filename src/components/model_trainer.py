@@ -8,16 +8,15 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.io as pio
 import os
-from entity.config_entity import ModelTrainerConfig
-
-
+from src.entity.config_entity import ModelTrainerConfig
 
 class ModelTrainer:
 
     def __init__(self, config: ModelTrainerConfig):
         self.config = config
         mlflow.set_tracking_uri("databricks")
-        # Databricks converte None em "None" (string)
+        
+        
         if self.config.registered_model_prefix is None or str(self.config.registered_model_prefix).lower() == "none":
             self.registered_model_prefix = None
         else:

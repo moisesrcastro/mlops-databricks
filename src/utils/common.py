@@ -2,19 +2,15 @@ import mlflow
 import yaml
 
 from loguru import logger
-from mlflow.tracking import MLflowClient
 from pathlib import Path
 from typing import Dict, Union
 
 from box import ConfigBox
 from box.exceptions import BoxValueError
-
-# Caso ProjectConfig seja do seu projeto
-from config.project_config import ProjectConfig
+from mlflow.tracking import MlflowClient
 
 
 def setup_mlflow(
-    config: ProjectConfig,
     experiment_name: str | None = None
 ) -> None:
     """
@@ -38,11 +34,11 @@ def setup_mlflow(
         raise e
 
 
-def get_mlflow_client() -> MLflowClient:
+def get_mlflow_client()->MlflowClient:
     """
     Get MLflow client for model registry operations.
     """
-    return MLflowClient()
+    return MlflowClient()
 
 
 def log_model_metrics_experiment(

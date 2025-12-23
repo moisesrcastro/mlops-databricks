@@ -1,12 +1,34 @@
 project_config:
-  catalog: catalog
-  schema: schema
+  catalog: spark_catalog
+  schema: hive_metastore
 
 data_processor:
   sql_query: |
-    SELECT *
-    FROM hive_metastore.refined_finance_bv.tabela_modelada
-  value_columns: ['value_1', 'value_2']
+    SELECT
+                            DATE_FORMAT(fact_deals.created_at, 'yyyy-MM-dd') AS data,
+                            COUNT(DISTINCT fact_deals.finan_cpf_cnpj_ajus) AS entrada
+                        FROM hive_metastore.refined_finance_bv.financiamento_fact_deals AS fact_deals
+                        WHERE fact_deals.created_at >= '2024-01-01'
+                        AND fact_deals.finan_tipo_lead IN ('Inbound', 'Outbound')
+
+                        AND (
+                                fact_deals.finan_motivo_declinio_geral NOT IN (
+                                    'Não aproveitado (solicitação BV)',
+                                    'Testes Internos'
+                                )
+                                OR fact_deals.finan_motivo_declinio_geral IS NULL
+                            )
+
+                        AND (
+                                fact_deals.finan_tipo_negociacao <> 'PJ'
+                                OR fact_deals.finan_tipo_negociacao IS NULL
+                            )
+
+                        GROUP BY
+                            DATE_FORMAT(fact_deals.created_at, 'yyyy-MM-dd')
+                        ORDER BY
+                            1 DESC
+  value_columns: ['entrada']
 
 feature_store:
   table_name: fs_producao_semana
@@ -14,9 +36,10 @@ feature_store:
     - semana
 
 model_training:
-  experiment_name: experiment_01
-  registered_model_prefix: registered_model_prexix_01
-  params: params_01
+  experiment_name: /Workspace/Shared/finan_bv_entrada_test
+  registered_model_prefix: entrada_finan_model
+  params:
+    versao_pipeline: 1
 
 model_validation:
   model_name: modelo_name

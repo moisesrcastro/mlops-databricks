@@ -1,4 +1,4 @@
-from entity.config_entity import DataProcessorConfig
+from src.entity.config_entity import DataProcessorConfig
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
