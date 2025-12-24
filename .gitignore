@@ -1,4 +1,5 @@
 # Python
+mlops_project.egg-info
 __pycache__/
 *.py[cod]
 *$py.class

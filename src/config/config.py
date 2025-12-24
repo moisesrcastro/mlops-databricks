@@ -1,5 +1,5 @@
-from src.utils.common import read_yaml
-from src.entity.config_entity import (
+from utils.common import read_yaml
+from entity.config_entity import (
                                 DataProcessorConfig, 
                                 FeatureStoreConfig,
                                 ModelTrainerConfig,

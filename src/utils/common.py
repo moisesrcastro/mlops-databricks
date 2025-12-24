@@ -18,7 +18,7 @@ def setup_mlflow(
     """
     mlflow.set_tracking_uri("databricks")
 
-    exp_name = experiment_name or config.experiment_name_basic
+    exp_name = experiment_name
 
     if not exp_name:
         logger.warning("No MLflow experiment name configured")

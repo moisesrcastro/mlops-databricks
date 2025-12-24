@@ -1,6 +1,6 @@
 from loguru import logger
 from pyspark.sql import DataFrame
-from src.entity.config_entity import FeatureStoreConfig, ProjectConfig
+from entity.config_entity import FeatureStoreConfig, ProjectConfig
 
 
 class FeatureStoreManager:

@@ -2,13 +2,9 @@ from typing import Any, Dict, List, Tuple
 import mlflow
 import mlflow.sklearn
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-import pandas as pd
 from loguru import logger
 import numpy as np
-import plotly.graph_objects as go
-import plotly.io as pio
-import os
-from src.entity.config_entity import ModelTrainerConfig
+from entity.config_entity import ModelTrainerConfig
 
 class ModelTrainer:
 
@@ -45,8 +41,7 @@ class ModelTrainer:
         model,
         model_name: str,
         X_train, y_train,
-        X_val=None, y_val=None,
-        df_plot=None, target=None, split_idx=None
+        X_val=None, y_val=None
     ):
 
         logger.info(f"Treinando modelo: {model_name}")
@@ -86,8 +81,7 @@ class ModelTrainer:
         self,
         models_list: List[Tuple[str, Any]],
         X_train, y_train,
-        X_val=None, y_val=None,
-        df_plot=None, target=None, split_idx=None
+        X_val=None, y_val=None
     ):
 
         resultados = []
@@ -101,10 +95,7 @@ class ModelTrainer:
                     X_train=X_train,
                     y_train=y_train,
                     X_val=X_val,
-                    y_val=y_val,
-                    df_plot=df_plot,
-                    target=target,
-                    split_idx=split_idx
+                    y_val=y_val
                 )
                 resultados.append((model_name, trained))
 

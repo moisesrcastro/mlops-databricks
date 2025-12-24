@@ -5,10 +5,10 @@ from sklearn.linear_model import PassiveAggressiveRegressor
 from sklearn.preprocessing import StandardScaler
 import mlflow
 
-from src.config.config import ConfigurationManager
-from src.components.data_processor import DataProcessor
-from src.components.feature_store import FeatureStoreManager
-from src.components.model_trainer import ModelTrainer
+from config.config import ConfigurationManager
+from components.data_processor import DataProcessor
+from components.feature_store import FeatureStoreManager
+from components.model_trainer import ModelTrainer
 
 logger.info("Starting Spark session")
 spark = SparkSession.builder.getOrCreate()
