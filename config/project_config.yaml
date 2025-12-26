@@ -33,21 +33,21 @@ data_processor:
 feature_store:
   table_name: fs_producao_semana
   primary_keys:
-    - semana
+    semana
 
 model_training:
   experiment_name: /Workspace/Shared/finan_bv_entrada_test
-  registered_model_prefix: entrada_finan_model
+  model_name: teste_mlops
   params:
     versao_pipeline: 1
 
 model_validation:
   model_name: teste_mlops
-  registry_name: v1
+  registry_name: teste_mlops
   validation:
     regression:
-      -r2: 0.65   
-      -mape: 0.15  
+      r2: 0.65   
+      mape: 0.15  
 
 model_registry:
   model_name: teste_mlops

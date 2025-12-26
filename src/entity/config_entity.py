@@ -18,7 +18,7 @@ class FeatureStoreConfig:
 @dataclass
 class ModelTrainerConfig:
     experiment_name: str
-    registered_model_prefix: str
+    model_name: str
     params: dict
 
 @dataclass

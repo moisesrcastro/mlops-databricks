@@ -1,134 +1,132 @@
 from databricks.sdk import WorkspaceClient
-from src.utils.config_entity import ModelDeployerConfig
-from typing import Optional, List, Dict, Any
-from databricks.sdk.service.serving import ( 
-    EndpointCoreConfigInput, 
-    ServedModelInput) 
+from src.entity.config_entity import ModelDeployerConfig
+from typing import Optional, Dict, Any
+from databricks.sdk.service.serving import (
+    EndpointCoreConfigInput,
+    ServedModelInput,
+)
 from loguru import logger
 import requests
+from databricks.sdk.service.serving import ServedModelInputWorkloadSize
+
 
 class ModelDeployer:
 
     def __init__(self, config: ModelDeployerConfig):
-        
         self.config = config
         self.model_name = self.config.model_name
         self.endpoint_name = self.config.endpoint_name
         self.workspace_client = WorkspaceClient()
 
-    def create_endpoint(self, 
-                        model_version: str="Production", 
-                        workload_size:str="Small", 
-                        scale_to_zero_enabled:bool=True,
-                        min_provisioned_throughput:int=1,
-                        max_provisioned_throughput:int=5) -> Dict[str, Any]:
-        "Create a new model serving endpoint"
-
+    def create_endpoint(
+        self,
+        model_version: str,
+    ) -> Dict[str, Any]:
 
         served_model = ServedModelInput(
-                                        model_name=self.model_name, 
-                                        model_version=model_version if model_version else None, 
-                                        workload_size=workload_size, 
-                                        scale_to_zero_enabled=scale_to_zero_enabled, 
-                                        min_provisioned_throughput=min_provisioned_throughput, 
-                                        max_provisioned_throughput=max_provisioned_throughput
-            ) 
+            model_name=self.model_name,
+            model_version=str(model_version),
+            workload_size=ServedModelInputWorkloadSize.SMALL,
+            scale_to_zero_enabled=True,
+        )
 
-        endpoint_config = EndpointCoreConfigInput(name=self.endpoint_name, served_models=[served_model], ) 
+        endpoint_config = EndpointCoreConfigInput(
+            served_models=[served_model],
+        )
 
-        try: 
-            endpoint = self.workspace_client.serving_endpoints.create(endpoint_config) 
-            logger.info(f"Endpoint created successfully: {endpoint.name}") 
-            logger.info(f"Endpoint state: {endpoint.state}")
+        endpoint = self.workspace_client.serving_endpoints.create(
+            name=self.endpoint_name,
+            config=endpoint_config,
+        )
 
-            return { 
-                    "name": endpoint.name, 
-                    "state": endpoint.state, 
-                    "creation_timestamp": endpoint.creation_timestamp, 
-                    }
+        logger.info("Endpoint creation requested: {}", endpoint.response.name)
 
-        except Exception as error:
-            logger.error(f"Error creating endpoint: {error}") 
-            raise
+        return {
+            "name": endpoint.response.name,
+            "creation_timestamp": endpoint.response.creation_timestamp,
+        }
 
-    def update_endpoint(self,
-                        model_version: str="Production") -> Dict[str, Any]:
-        "Update an existing endpoint"
+    def update_endpoint(
+        self,
+        model_version: str,
+    ) -> Dict[str, Any]:
 
         served_model = ServedModelInput(
-                                        model_name=self.model_name, 
-                                        model_version=model_version if model_version else None, 
-            ) 
-        
-        endpoint_config = EndpointCoreConfigInput(name=self.endpoint_name, served_models=[served_model], )
+            model_name=self.model_name,
+            model_version=str(model_version),
+            workload_size="Small",
+        )
 
+        endpoint_config = EndpointCoreConfigInput(
+            served_models=[served_model],
+        )
+
+        endpoint = self.workspace_client.serving_endpoints.update_config(
+            name=self.endpoint_name,
+            config=endpoint_config,
+        )
+
+        logger.info("Endpoint update requested: {}", endpoint.response.name)
+
+        return {
+            "name": endpoint.response.name,
+            "state": endpoint.response.state,
+        }
+
+    def get_endpoint(self) -> Optional[Dict[str, Any]]:
         try:
-            endpoint = self.workspace_client.serving_endpoints.update_config(endpoint_config)
-            logger.info(f"Endpoint updated successfully: {endpoint.name}") 
-            logger.info(f"Endpoint state: {endpoint.state}")
-            return { 
-                    "name": endpoint.name, 
-                    "state": endpoint.state
-                    }
+            endpoint = self.workspace_client.serving_endpoints.get(
+                name=self.endpoint_name
+            )
 
-        except Exception as error:
-            logger.error(f"Error updating endpoint: {error}")
+            return {
+                "name": endpoint.response.name,
+                "creation_timestamp": endpoint.response.creation_timestamp,
+                "config": {
+                    "served_models": [
+                        {
+                            "model_name": sm.model_name,
+                            "model_version": sm.model_version,
+                            "workload_size": sm.workload_size,
+                        }
+                        for sm in endpoint.response.pending_config
+                    ]
+                },
+            }
+
+        except Exception:
             return None
 
-    def get_endpoint(self) -> Dict[str, Any]:
-        "Get information about an edpoint"
-        try:
-            endpoint = self.workspace_client.serving_endpoints.get(name=self.endpoint_name)
+    def delete_endpoint(self) -> None:
+        self.workspace_client.serving_endpoints.delete(
+            name=self.endpoint_name
+        )
+        logger.info("Endpoint deleted: {}", self.endpoint_name)
 
-            return { 
-                "name": endpoint.name, 
-                "state": endpoint.state, 
-                "creation_timestamp": endpoint.creation_timestamp, 
-                "config": 
-                    { "served_models": 
-                        [ 
-                            { 
-                            "model_name": sm.model_name, 
-                            "model_version": sm.model_version, 
-                            "workload_size": sm.workload_size, 
-                            } 
-                        for sm in endpoint.config.served_models ], }, }
-        
-        except Exception as error:
-            logger.warning(f"Endpoint not found or error: {error}") 
-            return None
-    
-    def delete_endpoint(self):
+    def test_endpoint(
+        self,
+        test_data: Dict[str, Any],
+        endpoint_url: Optional[str] = None,
+    ) -> Dict[str, Any]:
 
-        logger.warning(f"Deleting endpoint: {self.endpoint_name}") 
-        try: 
-            
-            logger.info(f"Endpoint deleted: {self.endpoint_name}")
-            self.workspace_client.serving_endpoints.delete(name=self.endpoint_name)
-        
-        except Exception as error: 
-            logger.error(f"Error deleting endpoint: {error}") 
-            raise
+        if endpoint_url is None:
+            endpoint_url = (
+                f"{self.workspace_client.config.host}"
+                f"/serving-endpoints/{self.endpoint_name}/invocations"
+            )
 
-    def test_endpoint(self, test_data:Dict[str, Any], endpoint_url:Optional) -> Dict[str, Any]:
-        "Testing an endpoint with sample data"
+        token = self.workspace_client.config.token
 
-        if endpoint_url is None: 
-            endpoint_url = f"{self.workspace_client.config.host}/serving-endpoints/{self.endpoint_name}/invocations" 
-        if not endpoint_url: 
-            raise ValueError("Endpoint URL not available. Endpoint may not exist.") 
-        logger.info(f"Testing endpoint: {endpoint_url}") 
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
 
-        token = self.workspace_client.config.token 
-        headers = { "Authorization": f"Bearer {token}", "Content-Type": "application/json", } 
-        try: 
-            response = requests.post( endpoint_url, json={"dataframe_records": [test_data]}, headers=headers, ) 
-            response.raise_for_status() 
-            result = response.json() 
-            logger.info("Endpoint test successful") 
-            return result 
-        except Exception as e: 
-            logger.error(f"Error testing endpoint: {e}") 
-            raise
+        response = requests.post(
+            endpoint_url,
+            json={"dataframe_records": [test_data]},
+            headers=headers,
+        )
 
-
+        response.raise_for_status()
+        return response.json()

@@ -53,7 +53,7 @@ class ConfigurationManager:
 
         model_trainer_config = ModelTrainerConfig(
                                     experiment_name = config.experiment_name,
-                                    registered_model_prefix = config.registered_model_prefix,
+                                    model_name = config.model_name,
                                     params = config.params)
         return model_trainer_config
 

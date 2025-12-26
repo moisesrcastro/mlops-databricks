@@ -2,21 +2,27 @@ from typing import Any, Dict, List, Tuple
 import mlflow
 import mlflow.sklearn
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import pandas as pd
 from loguru import logger
 import numpy as np
+import plotly.graph_objects as go
+import plotly.io as pio
+import os
 from src.entity.config_entity import ModelTrainerConfig
+from mlflow.models.signature import infer_signature
+
 
 class ModelTrainer:
 
     def __init__(self, config: ModelTrainerConfig):
         self.config = config
-        mlflow.set_registry_uri("databricks")
+        mlflow.set_tracking_uri("databricks")
         
         
-        if self.config.registered_model_prefix is None or str(self.config.registered_model_prefix).lower() == "none":
-            self.registered_model_prefix = None
+        if self.config.model_name is None or str(self.config.model_name).lower() == "none":
+            self.model_name = None
         else:
-            self.registered_model_prefix = str(self.config.registered_model_prefix)
+            self.model_name = str(self.config.model_name)
 
         # Garantir que experiment_name nunca vem "None"
         if self.config.experiment_name is None or str(self.config.experiment_name).lower() == "none":
@@ -41,7 +47,8 @@ class ModelTrainer:
         model,
         model_name: str,
         X_train, y_train,
-        X_val=None, y_val=None
+        X_val=None, y_val=None,
+        df_plot=None, target=None, split_idx=None
     ):
 
         logger.info(f"Treinando modelo: {model_name}")
@@ -63,16 +70,19 @@ class ModelTrainer:
                 mlflow.log_metrics({f"val_{k}": v for k, v in val_metrics.items()})
 
             # Registro seguro (não registra se prefixo não fornecido)
-            if self.registered_model_prefix:
+            signature = infer_signature(X_train, model.predict(X_train))
+            if self.model_name:
                 mlflow.sklearn.log_model(
                     model,
-                    name=f"model",
-                    registered_model_name=f"{self.registered_model_prefix}_{model_name}"
+                    artifact_path=f"model",
+                    registered_model_name=f"{self.model_name}",
+                    signature=signature
                 )
             else:
                 mlflow.sklearn.log_model(
                     model,
-                    name=f"model"
+                    artifact_path=f"model",
+                    signature=signature
                 )
 
         return model
@@ -81,7 +91,8 @@ class ModelTrainer:
         self,
         models_list: List[Tuple[str, Any]],
         X_train, y_train,
-        X_val=None, y_val=None
+        X_val=None, y_val=None,
+        df_plot=None, target=None, split_idx=None
     ):
 
         resultados = []
@@ -95,7 +106,10 @@ class ModelTrainer:
                     X_train=X_train,
                     y_train=y_train,
                     X_val=X_val,
-                    y_val=y_val
+                    y_val=y_val,
+                    df_plot=df_plot,
+                    target=target,
+                    split_idx=split_idx
                 )
                 resultados.append((model_name, trained))
 
