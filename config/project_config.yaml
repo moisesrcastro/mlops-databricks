@@ -1,57 +1,34 @@
 project_config:
-  catalog: spark_catalog
-  schema: hive_metastore
+  catalog: your-catalog-name
+  schema: your-schema-name
 
 data_processor:
   sql_query: |
-    SELECT
-                            DATE_FORMAT(fact_deals.created_at, 'yyyy-MM-dd') AS data,
-                            COUNT(DISTINCT fact_deals.finan_cpf_cnpj_ajus) AS entrada
-                        FROM hive_metastore.refined_finance_bv.financiamento_fact_deals AS fact_deals
-                        WHERE fact_deals.created_at >= '2024-01-01'
-                        AND fact_deals.finan_tipo_lead IN ('Inbound', 'Outbound')
-
-                        AND (
-                                fact_deals.finan_motivo_declinio_geral NOT IN (
-                                    'Não aproveitado (solicitação BV)',
-                                    'Testes Internos'
-                                )
-                                OR fact_deals.finan_motivo_declinio_geral IS NULL
-                            )
-
-                        AND (
-                                fact_deals.finan_tipo_negociacao <> 'PJ'
-                                OR fact_deals.finan_tipo_negociacao IS NULL
-                            )
-
-                        GROUP BY
-                            DATE_FORMAT(fact_deals.created_at, 'yyyy-MM-dd')
-                        ORDER BY
-                            1 DESC
-  value_columns: ['entrada']
+    SELECT * FROM your-table
+  value_columns: ['target']
 
 feature_store:
-  table_name: fs_producao_semana
+  table_name: your-table-name
   primary_keys:
-    semana
+    your-primary-key
 
 model_training:
-  experiment_name: /Workspace/Shared/finan_bv_entrada_test
-  model_name: teste_mlops
+  experiment_name: your-experiment-name
+  model_name: your-model-name
   params:
     versao_pipeline: 1
 
 model_validation:
-  model_name: teste_mlops
-  registry_name: teste_mlops
+  model_name: your-model-name
+  registry_name: your-model-name
   validation:
     regression:
       r2: 0.65   
       mape: 0.15  
 
 model_registry:
-  model_name: teste_mlops
+  model_name: your-model-name
 
 model_deployer:
-  model_name: teste_mlops
-  endpoint_name: endpoint_name_01
+  model_name: your-model-name
+  endpoint_name: your-endpoint-name
