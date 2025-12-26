@@ -1,5 +1,5 @@
-from utils.common import read_yaml
-from entity.config_entity import (
+from src.utils.common import read_yaml
+from src.entity.config_entity import (
                                 DataProcessorConfig, 
                                 FeatureStoreConfig,
                                 ModelTrainerConfig,
@@ -63,7 +63,7 @@ class ConfigurationManager:
         model_validation_config = ModelValidatorConfig(
                                     model_name = config.model_name,
                                     registry_name = config.registry_name,
-                                    regression = config.repression)
+                                    validation = config.validation)
  
         return model_validation_config
 

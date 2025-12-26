@@ -1,5 +1,5 @@
 from databricks.sdk import WorkspaceClient
-from utils.config_entity import ModelDeployerConfig
+from src.utils.config_entity import ModelDeployerConfig
 from typing import Optional, List, Dict, Any
 from databricks.sdk.service.serving import ( 
     EndpointCoreConfigInput, 

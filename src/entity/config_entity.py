@@ -25,7 +25,7 @@ class ModelTrainerConfig:
 class ModelValidatorConfig:
     model_name: str
     registry_name: str
-    regression: dict  
+    validation: dict  
 
 @dataclass
 class ModelRegistryConfig:

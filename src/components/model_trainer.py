@@ -4,13 +4,13 @@ import mlflow.sklearn
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from loguru import logger
 import numpy as np
-from entity.config_entity import ModelTrainerConfig
+from src.entity.config_entity import ModelTrainerConfig
 
 class ModelTrainer:
 
     def __init__(self, config: ModelTrainerConfig):
         self.config = config
-        mlflow.set_tracking_uri("databricks")
+        mlflow.set_registry_uri("databricks")
         
         
         if self.config.registered_model_prefix is None or str(self.config.registered_model_prefix).lower() == "none":
@@ -66,13 +66,13 @@ class ModelTrainer:
             if self.registered_model_prefix:
                 mlflow.sklearn.log_model(
                     model,
-                    artifact_path=f"model_{model_name}",
+                    name=f"model",
                     registered_model_name=f"{self.registered_model_prefix}_{model_name}"
                 )
             else:
                 mlflow.sklearn.log_model(
                     model,
-                    artifact_path=f"model_{model_name}"
+                    name=f"model"
                 )
 
         return model

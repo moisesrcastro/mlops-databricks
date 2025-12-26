@@ -1,4 +1,4 @@
-from entity.config_entity import (
+from src.entity.config_entity import (
                                 ProjectConfig, 
                                 DataProcessorConfig, 
                                 FeatureStoreConfig, 

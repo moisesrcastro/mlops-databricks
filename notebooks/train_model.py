@@ -4,11 +4,12 @@ from pyspark.sql import SparkSession
 from sklearn.linear_model import PassiveAggressiveRegressor
 from sklearn.preprocessing import StandardScaler
 import mlflow
+from sklearn.pipeline import Pipeline
 
-from config.config import ConfigurationManager
-from components.data_processor import DataProcessor
-from components.feature_store import FeatureStoreManager
-from components.model_trainer import ModelTrainer
+from src.config.config import ConfigurationManager
+from src.components.data_processor import DataProcessor
+from src.components.feature_store import FeatureStoreManager
+from src.components.model_trainer import ModelTrainer
 
 logger.info("Starting Spark session")
 spark = SparkSession.builder.getOrCreate()
@@ -70,11 +71,16 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-model = PassiveAggressiveRegressor(
-    random_state=882,
-    max_iter=8000,
-    epsilon=0.01,
-    C=0.9
+model = Pipeline(
+    steps=[
+        ("scaler", StandardScaler()),
+        ("model", PassiveAggressiveRegressor(
+            random_state=882,
+            max_iter=8000,
+            epsilon=0.01,
+            C=0.9
+        ))
+    ]
 )
 
 trainer = ModelTrainer(
@@ -87,10 +93,7 @@ resultados = trainer.train_multiple_models(
     X_train=X_train_scaled,
     y_train=y_train,
     X_val=X_test_scaled,
-    y_val=y_test,
-    df_plot=df_features.toPandas(),
-    target=target,
-    split_idx=split_index
+    y_val=y_test
 )
 
 logger.info("Logging feature lineage in MLflow")

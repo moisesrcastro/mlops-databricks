@@ -3,7 +3,7 @@ import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.exceptions import MlflowException
 from loguru import logger
-from entity.config_entity import ModelRegistryConfig
+from src.entity.config_entity import ModelRegistryConfig
 
 class ModelRegistry:
 

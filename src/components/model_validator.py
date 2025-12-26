@@ -10,7 +10,7 @@ from sklearn.metrics import (
 import pandas as pd
 import numpy as np
 from loguru import logger
-from entity.config_entity import ModelValidatorConfig
+from src.entity.config_entity import ModelValidatorConfig
 
 try:
     import mlflow
