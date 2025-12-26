@@ -4,8 +4,10 @@ from loguru import logger
 from src.components.model_registry import ModelRegistry
 from src.components.model_validator import ModelValidator
 from src.config.config import ConfigurationManager
-
+from pyspark.sql import SparkSession
 # Configuration loading
+spark = SparkSession.builder.getOrCreate()
+
 logger.info("Loading project configuration")
 
 config_manager = ConfigurationManager()
