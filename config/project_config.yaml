@@ -1,0 +1,34 @@
+project_config:
+  catalog: your-catalog-name
+  schema: your-schema-name
+
+data_processor:
+  sql_query: |
+    SELECT * FROM your-table
+  value_columns: ['target']
+
+feature_store:
+  table_name: your-table-name
+  primary_keys:
+    your-primary-key
+
+model_training:
+  experiment_name: your-experiment-name
+  model_name: your-model-name
+  params:
+    versao_pipeline: 1
+
+model_validation:
+  model_name: your-model-name
+  registry_name: your-model-name
+  validation:
+    regression:
+      r2: 0.65   
+      mape: 0.15  
+
+model_registry:
+  model_name: your-model-name
+
+model_deployer:
+  model_name: your-model-name
+  endpoint_name: your-endpoint-name
